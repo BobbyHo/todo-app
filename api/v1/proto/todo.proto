@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "todo-app/api/v1/proto/todo";
+
+package todo;
+
+// The TODO service definition.
+service Todo {
+    // Adds a new Todo
+    rpc AddTodo (TodoRequest) returns (TodoReply) {}
+    // Update a Todo
+    rpc UpdateTodo (TodoRequest) returns (TodoReply) {}
+    // Delete a Todo
+    rpc DeleteTodo (TodoRequest) returns (TodoReply) {}
+    // List all Todos
+    rpc ListAllTodos (TodoListRequest) returns (TodoListReply) {}
+}
+
+// The request message containing the user's name.
+message TodoRequest {
+    string userid = 1;
+    string taskid = 2;
+    string description = 3;
+    google.protobuf.Timestamp due_date = 4;
+    enum State {
+        TODO = 0;
+        INPROGRESS = 1;
+        DONE = 2;
+    }
+    State state = 5;
+}
+
+// The response message containing the greetings
+message TodoReply {
+    string message = 1;
+    TodoRequest requestbody = 2;
+}
+
+message TodoListRequest {
+    string userid = 1;
+}
+
+message TodoListReply {
+    string message = 1;
+    repeated TodoRequest items = 2;
+}
