@@ -1,4 +1,4 @@
-package redis
+package dbredis
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ const (
 
 // Client is a client for the redis data store.
 type Client struct {
-	db            *redis.Client
+	DB            *redis.Client
 	Now           func() time.Time
 	lastWriteTime time.Time
 	TodoUserStore *TodoUserStore

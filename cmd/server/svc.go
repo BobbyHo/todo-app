@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"todo-app/internal/db/redis"
+	dbredis "todo-app/internal/db/redis"
 	"todo-app/internal/models"
 
 	pb "todo-app/api/v1/proto"
@@ -91,7 +91,7 @@ func handleGrpcServer(ctx context.Context, address string, wg *sync.WaitGroup, e
 }
 
 func openService(ctx context.Context, dbaddress, password string) *models.Service {
-	db := redis.NewClient()
+	db := dbredis.NewClient()
 
 	if err := db.Open(dbaddress, password); err != nil {
 		log.Fatalf("Error opening database: %v", err.Error())
