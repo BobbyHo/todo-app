@@ -1,0 +1,220 @@
+package redis
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"todo-app/internal/models"
+
+	redis "github.com/go-redis/redis"
+)
+
+// Ensure TodoUserStore implements models.TodoUserStore interface.
+var _ models.TodoUserStore = &TodoUserStore{}
+
+// TodoUserStore uses redis to store and retrieve user Todo records
+type TodoUserStore struct {
+	client *Client
+}
+
+// AddUser creates a new User Todo Record in the database.
+func (s *TodoUserStore) AddUser(ctx context.Context, userId string) error {
+
+	var err error
+	//check if the user record already exists
+	_, err = s.client.db.Get(userId).Bytes()
+	if err == nil {
+		// user record already created
+		return nil
+	}
+
+	// create an empty user record
+	nr := models.TodoUser{}
+	nr.Record = make(map[string]models.TodoData)
+
+	data, err := json.Marshal(nr)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = s.client.db.Set(userId, data, 0).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return err
+}
+
+func (s *TodoUserStore) DeleteUser(ctx context.Context, userId string) error {
+	return nil
+}
+
+func (s *TodoUserStore) AddTodo(ctx context.Context, t *models.TodoData) (*models.TodoData, error) {
+	key := t.UserId
+	err := s.client.db.Watch(func(tx *redis.Tx) error {
+		val, err := tx.Get(key).Bytes()
+		if err != nil && err != redis.Nil {
+			return err
+		}
+
+		temp := &models.TodoUser{}
+		if err := json.Unmarshal(val, temp); err != nil {
+			return err
+		}
+
+		// check if the user record already exists
+		if _, ok := temp.Record[t.TaskId]; ok {
+			return fmt.Errorf("Record %v already exists", t.TaskId)
+		}
+
+		temp.Record[t.TaskId] = *t
+
+		data, err := json.Marshal(temp)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
+			pipe.Set(key, data, 0)
+			return nil
+		})
+		return err
+	}, key)
+
+	return t, err
+}
+
+// Update a Todo Task
+func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*models.TodoData, error) {
+	key := t.UserId
+	err := s.client.db.Watch(func(tx *redis.Tx) error {
+		val, err := tx.Get(key).Bytes()
+		if err != nil && err != redis.Nil {
+			fmt.Printf("Failed to get record %v\n", err.Error())
+			return err
+		}
+
+		temp := &models.TodoUser{}
+		if err := json.Unmarshal(val, temp); err != nil {
+			return err
+		}
+
+		// For now, assuming that user will fill in all the fields in the Data
+		temp.Record[t.TaskId] = *t
+
+		data, err := json.Marshal(temp)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
+			pipe.Set(key, data, 0)
+			return nil
+		})
+		return err
+	}, key)
+
+	if err != nil {
+		fmt.Printf("Failed to update record %v\n", err.Error())
+	}
+
+	return t, err
+}
+
+// Delete a Todo List
+func (s *TodoUserStore) DeleteTodo(ctx context.Context, t *models.TodoData) error {
+	key := t.UserId
+	err := s.client.db.Watch(func(tx *redis.Tx) error {
+		val, err := tx.Get(key).Bytes()
+		if err != nil && err != redis.Nil {
+			fmt.Printf("Failed to get record %v\n", err.Error())
+			return err
+		}
+
+		temp := &models.TodoUser{}
+		if err := json.Unmarshal(val, temp); err != nil {
+			return err
+		}
+
+		if _, ok := temp.Record[t.TaskId]; ok {
+			delete(temp.Record, t.TaskId)
+
+			if _, ok := temp.Record[t.TaskId]; ok {
+				fmt.Printf("Failed to remove record %v from user Todo list\n", t.TaskId)
+				return fmt.Errorf("Failed to remove record %v from map", t.TaskId)
+			} else {
+				fmt.Printf("deleted record %v from user todo list\n", t.TaskId)
+			}
+		} else {
+			return fmt.Errorf("Record %v does not exists", t.TaskId)
+		}
+
+		data, err := json.Marshal(temp)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
+			pipe.Set(key, data, 0)
+			return nil
+		})
+		return err
+	}, key)
+
+	if err != nil {
+		fmt.Printf("Failed to delete record %v\n", err.Error())
+	}
+
+	return err
+}
+
+// List a specific TODO list
+func (s *TodoUserStore) ListTodo(ctx context.Context, userId, taskId string) (*models.TodoData, error) {
+
+	//check if the user record already exists
+	val, err := s.client.db.Get(userId).Bytes()
+	if err != nil {
+		// user record already created
+		return &models.TodoData{}, err
+	}
+
+	temp := &models.TodoUser{}
+	if err := json.Unmarshal(val, temp); err != nil {
+		return &models.TodoData{}, err
+	}
+
+	result, ok := temp.Record[taskId]
+	if !ok {
+		return &models.TodoData{}, err
+	}
+
+	return &result, nil
+}
+
+// List All Todo Tasks belong to a user
+func (s *TodoUserStore) ListAllTodos(ctx context.Context, userId string) ([]*models.TodoData, error) {
+	var todoLists []*models.TodoData
+	//check if the user record already exists
+	val, err := s.client.db.Get(userId).Bytes()
+	if err != nil {
+		// user record already created
+		return todoLists, err
+	}
+
+	temp := &models.TodoUser{}
+	if err := json.Unmarshal(val, temp); err != nil {
+		return todoLists, err
+	}
+
+	for _, r := range temp.Record {
+		tempTodo := r
+		//fmt.Printf("ListAllTodos: %v\n", tempTodo)
+		todoLists = append(todoLists, &tempTodo)
+	}
+
+	return todoLists, nil
+}

@@ -3,6 +3,7 @@ module todo-app
 go 1.14
 
 require (
+	github.com/go-redis/redis v6.15.8+incompatible
 	github.com/golang/protobuf v1.4.2
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
 	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
