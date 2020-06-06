@@ -6,8 +6,9 @@ type Database interface {
 
 type Store struct {
 	TodoUserStore TodoUserStore
+}
 
 type Service struct {
-	Database      Database
-	Store         *Store
+	Database Database
+	Store    *Store
 }

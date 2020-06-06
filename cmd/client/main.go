@@ -31,8 +31,7 @@ import (
 )
 
 const (
-	address     = "localhost:38888"
-	defaultName = "world"
+	address = "localhost:12345"
 )
 
 func main() {
@@ -47,13 +46,27 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	todoRequest := pb.TodoRequest{}
-	todoRequest.Userid = "Bobby"
-	todoRequest.Taskid = "Test"
-	todoRequest.Description = "Test Todo"
-	todoRequest.DueDate = &timestamp.Timestamp{}
+	userId := "test-new-user"
 
-	r, err := c.AddTodo(ctx, &todoRequest)
+	// add a new user
+	newUser := pb.UserRequest{}
+	newUser.Userid = userId
+	_, err = c.AddUser(ctx, &newUser)
+	if err != nil {
+		log.Fatalf("could not add a new user: %v", err)
+	}
+
+	todoRequest := pb.TodoRequest{}
+	todoRequest.Userid = userId
+
+	todoBody := &pb.TodoBody{}
+	todoBody.Taskid = "Test"
+	todoBody.Description = "Test Todo"
+	todoBody.DueDate = &timestamp.Timestamp{}
+
+	todoRequest.TodoBody = todoBody
+
+	r, err := c.UpdateTodo(ctx, &todoRequest)
 	if err != nil {
 		log.Fatalf("could not add Todo: %v", err)
 	}

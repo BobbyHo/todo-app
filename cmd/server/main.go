@@ -76,6 +76,10 @@ func main() {
 
 func main() {
 
+	var configPath string
+
+	log.Printf("configuration Path: %v\n", configPath)
+
 	// register for signals
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -87,7 +91,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	Service = SvcInit(ctx)
+	Service = SvcInit(ctx, configPath)
 
 	// Create channel used by both the signal handler and server goroutines
 	// to notify the main goroutine when to stop the server.

@@ -6,13 +6,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
+	"todo-app/internal/db/redis"
+	"todo-app/internal/models"
+
+	pb "todo-app/api/v1/proto"
 
 	"google.golang.org/grpc"
 )
@@ -71,19 +71,19 @@ func handleGrpcServer(ctx context.Context, address string, wg *sync.WaitGroup, e
 		}()
 
 		<-ctx.Done()
-		log.Printf("shutting down GRPC server at %q", u.Host)
+		log.Printf("shutting down GRPC server at %q", address)
 
-		stopped := make(chan, struct{})
-		go func () {
-			srv.GracefulStop()
+		stopped := make(chan struct{})
+		go func() {
+			s.GracefulStop()
 			close(stopped)
-		}
+		}()
 
 		t := time.NewTimer(10 * time.Second)
 		select {
-		case <- t.C:
-			srv.Stop()
-		case <- stopped:
+		case <-t.C:
+			s.Stop()
+		case <-stopped:
 			t.Stop()
 		}
 
@@ -99,7 +99,7 @@ func openService(ctx context.Context, dbaddress, password string) *models.Servic
 	}
 
 	return &models.Service{
-		Database:      db,
+		Database: db,
 		Store: &models.Store{
 			TodoUserStore: db.TodoUserStore,
 		},

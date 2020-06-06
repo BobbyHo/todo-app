@@ -7,16 +7,20 @@ import (
 	"todo-app/internal/models"
 )
 
+// Start Redis first before running the following tests
+var testDBAddress string = "127.0.0.1:6379"
+var testDBPassword string = ""
+
 func TestAddUser(t *testing.T) {
 	newTestClient := NewClient()
 
-	err := newTestClient.Open()
+	err := newTestClient.Open(testDBAddress, testDBPassword)
 	if err != nil {
 		t.Error("Failed to connect to redis")
 	}
 	defer newTestClient.Close()
 
-	err = newTestClient.TodoStore.AddUser(context.Background(), "test-user")
+	err = newTestClient.TodoUserStore.AddUser(context.Background(), "test-user")
 	if err != nil {
 		t.Error("Failed to add user")
 	}
@@ -25,7 +29,7 @@ func TestAddUser(t *testing.T) {
 func TestUpdateTodo(t *testing.T) {
 	newTestClient := NewClient()
 
-	err := newTestClient.Open()
+	err := newTestClient.Open(testDBAddress, testDBPassword)
 	if err != nil {
 		t.Error("Failed to connect to redis")
 	}
@@ -37,18 +41,18 @@ func TestUpdateTodo(t *testing.T) {
 		Description: "Test Update Todo",
 	}
 
-	_, err = newTestClient.TodoStore.AddTodo(context.Background(), &testTodo)
+	_, err = newTestClient.TodoUserStore.AddTodo(context.Background(), &testTodo)
 	if err != nil {
 		t.Errorf("Failed to add todo err: %v", err.Error())
 	}
 
 	testTodo.Description = "Updated Test Todo Test"
-	_, err = newTestClient.TodoStore.UpdateTodo(context.Background(), &testTodo)
+	_, err = newTestClient.TodoUserStore.UpdateTodo(context.Background(), &testTodo)
 	if err != nil {
 		t.Errorf("Failed to update todo err: %v", err.Error())
 	}
 
-	result, err := newTestClient.TodoStore.ListTodo(context.Background(), testTodo.UserId, testTodo.TaskId)
+	result, err := newTestClient.TodoUserStore.ListTodo(context.Background(), testTodo.UserId, testTodo.TaskId)
 	if err != nil {
 		t.Errorf("Failed to update TODO task error: %v\n", err.Error())
 	} else if !reflect.DeepEqual(&testTodo, result) {
@@ -57,7 +61,7 @@ func TestUpdateTodo(t *testing.T) {
 
 	t.Logf("Updated Todo Result: %v\n", *result)
 
-	err = newTestClient.TodoStore.DeleteTodo(context.Background(), &testTodo)
+	err = newTestClient.TodoUserStore.DeleteTodo(context.Background(), &testTodo)
 	if err != nil {
 		t.Errorf("Expected Result: %v is not the same as %v\n", testTodo, result)
 	}
@@ -66,7 +70,7 @@ func TestUpdateTodo(t *testing.T) {
 func TestAddandDeleteTodo(t *testing.T) {
 	newTestClient := NewClient()
 
-	err := newTestClient.Open()
+	err := newTestClient.Open(testDBAddress, testDBPassword)
 	if err != nil {
 		t.Error("Failed to connect to redis")
 	}
@@ -77,12 +81,12 @@ func TestAddandDeleteTodo(t *testing.T) {
 		TaskId:      "test-task-add-delete",
 		Description: "Test Delete Todo",
 	}
-	_, err = newTestClient.TodoStore.AddTodo(context.Background(), &testTodo)
+	_, err = newTestClient.TodoUserStore.AddTodo(context.Background(), &testTodo)
 	if err != nil {
 		t.Errorf("Failed to add todo err: %v", err.Error())
 	}
 
-	err = newTestClient.TodoStore.DeleteTodo(context.Background(), &testTodo)
+	err = newTestClient.TodoUserStore.DeleteTodo(context.Background(), &testTodo)
 	if err != nil {
 		t.Errorf("Failed to delete todo err: %v", err.Error())
 	}
@@ -92,7 +96,7 @@ func TestListAllTodos(t *testing.T) {
 
 	newTestClient := NewClient()
 
-	err := newTestClient.Open()
+	err := newTestClient.Open(testDBAddress, testDBPassword)
 	if err != nil {
 		t.Error("Failed to connect to redis")
 	}
@@ -100,7 +104,7 @@ func TestListAllTodos(t *testing.T) {
 
 	testUser := "test-user-lists"
 
-	err = newTestClient.TodoStore.AddUser(context.Background(), testUser)
+	err = newTestClient.TodoUserStore.AddUser(context.Background(), testUser)
 	if err != nil {
 		t.Errorf("Failed to add user error: %v\n", err.Error())
 	}
@@ -117,17 +121,17 @@ func TestListAllTodos(t *testing.T) {
 		Description: "List All Todos 2",
 	}
 
-	_, err = newTestClient.TodoStore.AddTodo(context.Background(), &testTodo1)
+	_, err = newTestClient.TodoUserStore.AddTodo(context.Background(), &testTodo1)
 	if err != nil {
 		t.Errorf("Failed to add first todo err: %v", err.Error())
 	}
 
-	_, err = newTestClient.TodoStore.AddTodo(context.Background(), &testTodo2)
+	_, err = newTestClient.TodoUserStore.AddTodo(context.Background(), &testTodo2)
 	if err != nil {
 		t.Errorf("Failed to add second todo err: %v", err.Error())
 	}
 
-	results, err := newTestClient.TodoStore.ListAllTodos(context.Background(), testUser)
+	results, err := newTestClient.TodoUserStore.ListAllTodos(context.Background(), testUser)
 	if err != nil {
 		t.Errorf("Failed to get all TODO lists: %v", err.Error())
 	}
@@ -144,12 +148,12 @@ func TestListAllTodos(t *testing.T) {
 		}
 	}
 
-	err = newTestClient.TodoStore.DeleteTodo(context.Background(), &testTodo1)
+	err = newTestClient.TodoUserStore.DeleteTodo(context.Background(), &testTodo1)
 	if err != nil {
 		t.Errorf("Failed to delete first todo err: %v", err.Error())
 	}
 
-	err = newTestClient.TodoStore.DeleteTodo(context.Background(), &testTodo2)
+	err = newTestClient.TodoUserStore.DeleteTodo(context.Background(), &testTodo2)
 	if err != nil {
 		t.Errorf("Failed to delete second todo err: %v", err.Error())
 	}

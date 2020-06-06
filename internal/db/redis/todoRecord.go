@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"todo-app/internal/models"
 
 	redis "github.com/go-redis/redis"
@@ -34,20 +35,34 @@ func (s *TodoUserStore) AddUser(ctx context.Context, userId string) error {
 
 	data, err := json.Marshal(nr)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
 	err = s.client.db.Set(userId, data, 0).Err()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	return err
 }
 
 func (s *TodoUserStore) DeleteUser(ctx context.Context, userId string) error {
-	return nil
+	var err error
+	//check if the user record already exists
+	_, err = s.client.db.Get(userId).Bytes()
+	if err != nil {
+		// user record already created
+		log.Printf("Failed to get user record: %v", err.Error())
+		return err
+	}
+
+	err = s.client.db.Del(userId).Err()
+	if err != nil {
+		log.Printf("Failed to delete user record: %v", err.Error())
+	}
+
+	return err
 }
 
 func (s *TodoUserStore) AddTodo(ctx context.Context, t *models.TodoData) (*models.TodoData, error) {
@@ -60,6 +75,7 @@ func (s *TodoUserStore) AddTodo(ctx context.Context, t *models.TodoData) (*model
 
 		temp := &models.TodoUser{}
 		if err := json.Unmarshal(val, temp); err != nil {
+			log.Printf("Failed to Unmarshal record error: %v\n", err.Error())
 			return err
 		}
 
@@ -72,7 +88,7 @@ func (s *TodoUserStore) AddTodo(ctx context.Context, t *models.TodoData) (*model
 
 		data, err := json.Marshal(temp)
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("Failed to Marshal record error: %v\n", err.Error())
 			return err
 		}
 
@@ -98,6 +114,7 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 
 		temp := &models.TodoUser{}
 		if err := json.Unmarshal(val, temp); err != nil {
+			log.Printf("Failed to Unmarshal record error: %v\n", err.Error())
 			return err
 		}
 
@@ -106,7 +123,7 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 
 		data, err := json.Marshal(temp)
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("Failed to Marshal record error: %v\n", err.Error())
 			return err
 		}
 

@@ -3,6 +3,8 @@ package models
 import (
 	"context"
 
+	pb "todo-app/api/v1/proto"
+
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
@@ -11,7 +13,7 @@ type TodoData struct {
 	UserId      string              `json:"userId"`
 	TaskId      string              `json:"taskId,omitempty"`
 	Description string              `json:"description,omitempty"`
-	State       int                 `json:"state,omitempty"`
+	State       pb.TodoState        `json:"state,omitempty"`
 	DueDate     timestamp.Timestamp `json:"userID,omitempty"`
 }
 
