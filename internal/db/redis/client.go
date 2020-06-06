@@ -21,21 +21,21 @@ type Client struct {
 	db            *redis.Client
 	Now           func() time.Time
 	lastWriteTime time.Time
-	TodoStore     *TodoUserStore
+	TodoUserStore *TodoUserStore
 }
 
 // NewClient initializes all stores
 func NewClient() *Client {
 	c := &Client{Now: time.Now}
-	c.TodoStore = &TodoUserStore{client: c}
+	c.TodoUserStore = &TodoUserStore{client: c}
 	return c
 }
 
 // Close the connection to the redis database
-func (c *Client) Open() error {
+func (c *Client) Open(dbaddress, password string) error {
 	c.db = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", //todo: read this from env
-		Password: "",
+		Addr:     dbaddress,
+		Password: password,
 		DB:       0,
 	})
 

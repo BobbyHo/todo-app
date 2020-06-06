@@ -8,41 +8,78 @@ package todo;
 
 // The TODO service definition.
 service Todo {
+    // Add a new user
+    rpc AddUser (UserRequest) returns (UserReply) {}
+    // Delete a user
+    rpc DeleteUser(UserRequest) returns (UserReply) {}
     // Adds a new Todo
     rpc AddTodo (TodoRequest) returns (TodoReply) {}
     // Update a Todo
     rpc UpdateTodo (TodoRequest) returns (TodoReply) {}
     // Delete a Todo
     rpc DeleteTodo (TodoRequest) returns (TodoReply) {}
+    // List a Todo task
+    rpc ListTodo(TodoListRequest) returns (TodoReply) {}
     // List all Todos
-    rpc ListAllTodos (TodoListRequest) returns (TodoListReply) {}
+    rpc ListAllTodos (UserRequest) returns (TodoListAllReply) {}
+    // Listen to other TODO actions
+    rpc ListenTodos (stream ListenRequest) returns (stream ListenReply) {}
 }
 
-// The request message containing the user's name.
+// Todo Task State
+enum TodoState {
+    TODO = 0;
+    INPROGRESS = 1;
+    DONE = 2;
+}
+
+message TodoBody {
+    string taskid = 1;
+    string description = 2;
+    google.protobuf.Timestamp due_date = 3; 
+    TodoState state = 4;
+}
+
+// The request message containing the user's ID and request
 message TodoRequest {
     string userid = 1;
-    string taskid = 2;
-    string description = 3;
-    google.protobuf.Timestamp due_date = 4;
-    enum State {
-        TODO = 0;
-        INPROGRESS = 1;
-        DONE = 2;
-    }
-    State state = 5;
+    TodoBody todoBody = 2;
 }
 
-// The response message containing the greetings
+// The response message containing the Todo Task
 message TodoReply {
     string message = 1;
-    TodoRequest requestbody = 2;
+    TodoBody todoBody = 2;
 }
 
 message TodoListRequest {
     string userid = 1;
+    string taskid = 2;
 }
 
-message TodoListReply {
+message TodoListAllReply {
     string message = 1;
-    repeated TodoRequest items = 2;
+    repeated TodoBody items = 2;
+}
+
+message UserRequest {
+    string userid = 1;
+}
+
+message UserReply {
+    string message = 1;
+}
+
+message ListenReply {
+    string action = 1;
+    TodoBody item = 2;
+}
+
+message ListenRequest {
+    string userid = 1;
+    enum State {
+        OPEN = 0;
+        CLOSE = 1;
+    }
+    State state = 2;
 }

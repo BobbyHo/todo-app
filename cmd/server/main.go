@@ -23,12 +23,14 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	pb "todo-app/api/v1/proto"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -41,7 +43,6 @@ type server struct {
 	pb.UnimplementedTodoServer
 }
 
-// server is used to implement todo.TodoServer.
 type todo struct {
 	userID      string              `json:"userId"`
 	taskID      string              `json:"taskId,omitempty"`
@@ -59,43 +60,7 @@ func (t *todo) String() string {
 	return s
 }
 
-// AddTodo implements todo.AddTodo
-func (s *server) AddTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply, error) {
-
-	newTodo := &todo{
-		userID:      in.GetUserid(),
-		taskID:      in.GetTaskid(),
-		description: in.GetDescription(),
-	}
-
-	log.Printf("AddTodo:\n %v\n", newTodo)
-	return &pb.TodoReply{Message: "AddTodo OK ", Requestbody: in}, nil
-}
-
-// UpdateTodo implements todo.AddTodo
-func (s *server) UpdateTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply, error) {
-	newTodo := &todo{
-		userID:      in.GetUserid(),
-		taskID:      in.GetTaskid(),
-		description: in.GetDescription(),
-	}
-
-	log.Printf("UpdateTodo:\n %v\n", newTodo)
-	return &pb.TodoReply{Message: "UpdateTodo OK ", Requestbody: in}, nil
-}
-
-// DeleteTodo implements todo.DeleteTodo
-func (s *server) DeleteTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply, error) {
-	newTodo := &todo{
-		userID:      in.GetUserid(),
-		taskID:      in.GetTaskid(),
-		description: in.GetDescription(),
-	}
-
-	log.Printf("UpdateTodo:\n %v\n", newTodo)
-	return &pb.TodoReply{Message: "UpdateTodo OK ", Requestbody: in}, nil
-}
-
+/*
 func main() {
 	lis, err := net.Listen("tcp", defaultPort)
 	if err != nil {
@@ -106,4 +71,53 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+*/
+
+func main() {
+
+	// register for signals
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	Service = SvcInit(ctx)
+
+	// Create channel used by both the signal handler and server goroutines
+	// to notify the main goroutine when to stop the server.
+	errc := make(chan error)
+
+	// no need to run SvcRun in a seperate go routine because
+	// a go routine is created inside the handleTCPServer() function
+	// defined in svc.go
+	SvcRun(ctx, &wg, errc)
+
+waitloop:
+	// wait for the stop signal
+	for {
+
+		select {
+		case sig := <-sigs:
+			log.Printf("\nReceived a signal: %v\n", sig)
+			cancel() // signal the gRPC server to shutdown
+			Service.Database.Close()
+			break waitloop
+		case err := <-errc:
+			log.Printf("Received error from gRPC server: %v", err.Error())
+			cancel()
+			//wg.Wait()
+			os.Exit(0)
+		}
+	}
+
+	wg.Wait()
+
+	log.Print("Exiting Todo Service - Bye\n")
+
 }
