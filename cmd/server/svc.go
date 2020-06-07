@@ -11,6 +11,7 @@ import (
 	"time"
 	dbredis "todo-app/internal/db/redis"
 	"todo-app/internal/models"
+	msgredis "todo-app/internal/msgqueue/redis"
 
 	pb "todo-app/api/v1/proto"
 
@@ -98,8 +99,17 @@ func openService(ctx context.Context, dbaddress, password string) *models.Servic
 		//panic("Error opening database")
 	}
 
+	// connect to a message queue to publish Todo events
+	msgQ := msgredis.NewMsgHandler()
+
+	// TODO: create a separate configuration for the message queue in the future
+	if err := msgQ.Open(dbaddress, password); err != nil {
+		log.Fatalf("Error opening message queue: %v", err.Error())
+	}
+
 	return &models.Service{
 		Database: db,
+		MsgQ:     msgQ,
 		Store: &models.Store{
 			TodoUserStore: db.TodoUserStore,
 		},

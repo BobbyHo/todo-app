@@ -23,7 +23,7 @@ service Todo {
     // List all Todos
     rpc ListAllTodos (UserRequest) returns (TodoListAllReply) {}
     // Listen to other TODO actions
-    rpc ListenTodos (stream ListenRequest) returns (stream ListenReply) {}
+    rpc ListenTodos (ListenRequest) returns (stream ListenReply) {}
 }
 
 // Todo Task State
@@ -72,7 +72,6 @@ message UserReply {
 
 message ListenReply {
     string action = 1;
-    TodoBody item = 2;
 }
 
 message ListenRequest {

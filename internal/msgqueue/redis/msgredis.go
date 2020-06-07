@@ -52,19 +52,35 @@ func (c *TodoMsgHandler) Close() error {
 
 // Publish implements models.Publish
 func (s *TodoMsgHandler) Publish(ctx context.Context, channel string, message interface{}) error {
+	log.Printf("Publishing a message: %v\n", message)
 	return s.db.Publish(channel, message).Err()
 }
 
 // Publish implements models.Publish
-func (s *TodoMsgHandler) Subscribe(channels ...string) error {
+func (s *TodoMsgHandler) Subscribe(ctx context.Context, channels ...string) (models.PubSub, error) {
+	log.Printf("Subscribe to Channel: %v\n", channels)
 	pubsub := s.db.Subscribe(channels...)
-	s.pubsub = pubsub
-	return nil
+
+	p := NewPubSubHandler(pubsub)
+
+	return p, nil
+}
+
+// PubSubHandler ...
+type PubSubHandler struct {
+	pubsub *redis.PubSub
+}
+
+// NewPubSubHandler
+func NewPubSubHandler(p *redis.PubSub) *PubSubHandler {
+	return &PubSubHandler{
+		pubsub: p,
+	}
 }
 
 // Receive a message, it will block until a message has arrived
-func (s *TodoMsgHandler) Receive(ctx context.Context) *models.Message {
-	if s.pubsub == nil {
+func (p *PubSubHandler) Receive(ctx context.Context) *models.Message {
+	if p.pubsub == nil {
 		return nil
 	}
 
@@ -74,8 +90,8 @@ func (s *TodoMsgHandler) Receive(ctx context.Context) *models.Message {
 			log.Printf("Failed to receive message: %v\n", err.Error())
 		}
 	*/
-
-	msgChannel := s.pubsub.Channel()
+	log.Println("Waiting for message")
+	msgChannel := p.pubsub.Channel()
 	todoMsg := models.Message{}
 
 outerloop:
@@ -94,4 +110,9 @@ outerloop:
 
 	return &todoMsg
 
+}
+
+// Close the pubsub connection
+func (p *PubSubHandler) Close() error {
+	return p.pubsub.Close()
 }

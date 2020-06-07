@@ -8,6 +8,38 @@ import (
 	pb "todo-app/api/v1/proto"
 )
 
+// Add a new user
+func (s *server) AddUser(ctx context.Context, in *pb.UserRequest) (*pb.UserReply, error) {
+	replyMsg := "Create User Successful"
+
+	err := Service.Store.TodoUserStore.AddUser(ctx, in.GetUserid())
+	if err != nil {
+		replyMsg = "Add User Fail"
+		log.Printf("Failed to add a new user: %v\n", err.Error())
+	}
+
+	log.Printf("Added new user: %v\n", in.GetUserid())
+	reply := &pb.UserReply{}
+	reply.Message = replyMsg
+	return reply, err
+}
+
+// Add a new user
+func (s *server) DeleteUser(ctx context.Context, in *pb.UserRequest) (*pb.UserReply, error) {
+	replyMsg := "Delete User Successful"
+
+	err := Service.Store.TodoUserStore.DeleteUser(ctx, in.GetUserid())
+	if err != nil {
+		replyMsg = "Delete User Fail"
+		log.Printf("Failed to add a new user: %v\n", err.Error())
+	}
+
+	log.Printf("Delete user: %v\n", in.GetUserid())
+	reply := &pb.UserReply{}
+	reply.Message = replyMsg
+	return reply, err
+}
+
 // AddTodo implements TodoServer.AddTodo
 func (s *server) AddTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply, error) {
 
@@ -23,7 +55,13 @@ func (s *server) AddTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply
 		DueDate:     *in.GetTodoBody().GetDueDate(),
 	}
 
-	_, err := Service.Store.TodoUserStore.AddTodo(ctx, newTodo)
+	pubMsg := newTodo.UserId + "add todo" + "task: " + newTodo.TaskId
+	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
+	if err != nil {
+		log.Printf("Failed to publish msg: %v error: %v\n", pubMsg, err.Error())
+	}
+
+	_, err = Service.Store.TodoUserStore.AddTodo(ctx, newTodo)
 	if err != nil {
 		replyMsg = "Add Todo Task Fail"
 		log.Printf("Failed to add Todo: %v\n", err.Error())
@@ -33,22 +71,6 @@ func (s *server) AddTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply
 	reply := &pb.TodoReply{}
 	reply.Message = replyMsg
 	reply.TodoBody = in.GetTodoBody()
-	return reply, err
-}
-
-// Add a new user
-func (s *server) AddUser(ctx context.Context, in *pb.UserRequest) (*pb.UserReply, error) {
-	replyMsg := "Create User Successful"
-
-	err := Service.Store.TodoUserStore.AddUser(ctx, in.GetUserid())
-	if err != nil {
-		replyMsg = "Add User Fail"
-		log.Printf("Failed to add a new user: %v\n", err.Error())
-	}
-
-	log.Printf("Added new user: %v\n", in.GetUserid())
-	reply := &pb.UserReply{}
-	reply.Message = replyMsg
 	return reply, err
 }
 
@@ -66,7 +88,13 @@ func (s *server) UpdateTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoRe
 		DueDate:     *in.GetTodoBody().GetDueDate(),
 	}
 
-	_, err := Service.Store.TodoUserStore.UpdateTodo(ctx, newTodo)
+	pubMsg := newTodo.UserId + " update todo" + " task: " + newTodo.TaskId
+	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
+	if err != nil {
+		log.Printf("Failed to publish msg: %v error: %v\n", pubMsg, err.Error())
+	}
+
+	_, err = Service.Store.TodoUserStore.UpdateTodo(ctx, newTodo)
 	if err != nil {
 		replyMsg = "Update Todo Task Fail"
 		log.Printf("Failed to update Todo: %v\n", err.Error())
@@ -161,6 +189,39 @@ func (s *server) ListAllTodos(ctx context.Context, in *pb.UserRequest) (*pb.Todo
 }
 
 // Listen to other TODO actions
-func (s *server) ListenTodos(pb.Todo_ListenTodosServer) error {
+func (s *server) ListenTodos(in *pb.ListenRequest, stream pb.Todo_ListenTodosServer) error {
+	// authenticate users
+
+	log.Println("ListenTodos")
+	// create a new msq client and connect to pubsub
+	//msgQ := msgredis.NewMsgHandler()
+	msgQ := Service.MsgQ
+
+	log.Printf("ListenTodos: Subscribe to message : %v\n", models.TodoCmdChannel)
+	p, err := msgQ.Subscribe(context.Background(), models.TodoCmdChannel)
+	if err != nil {
+		log.Printf("Failed to subscribe to channel error: %v\n", err.Error())
+		return err
+	}
+	defer p.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	for {
+		log.Printf("ListenTodos: Waiting for message from: %v\n", models.TodoCmdChannel)
+		msg := p.Receive(ctx)
+		log.Printf("ListenTodos: Received a message from: %v\n", models.TodoCmdChannel)
+
+		if msg != nil {
+			listenReply := &pb.ListenReply{}
+			listenReply.Action = msg.Payload
+			log.Printf("ListenTodos: Sending message: %v\n", msg.Payload)
+			if err := stream.Send(listenReply); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

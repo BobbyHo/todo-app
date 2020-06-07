@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"time"
 
@@ -34,7 +35,43 @@ const (
 	address = "localhost:12345"
 )
 
+func ListenTodos(ctx context.Context) {
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewTodoClient(conn)
+
+	userId := "test-new-user"
+
+	newListen := pb.ListenRequest{}
+	newListen.Userid = userId
+	stream, err := c.ListenTodos(ctx, &newListen)
+	if err != nil {
+		log.Fatalf("%v.ListenTodos = _, %v", c, err)
+	}
+
+	for {
+		listenReply, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("%v.ListenTodos(_) = _, %v", c, err)
+		}
+		log.Printf("Received Listen Reply: %v\n", listenReply)
+	}
+
+}
+
 func main() {
+	ctxListen, cancelListen := context.WithCancel(context.Background())
+	defer cancelListen()
+
+	go ListenTodos(ctxListen)
+
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -72,4 +109,5 @@ func main() {
 	}
 	log.Printf("Todo Response: %s\n", r.GetMessage())
 
+	time.Sleep(5 * time.Second)
 }

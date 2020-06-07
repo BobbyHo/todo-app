@@ -19,26 +19,17 @@ func TestPubSub(t *testing.T) {
 	}
 	defer testClient.Close()
 
-	/*
-		testTodo := models.TodoData{
-			UserId:      "test-user",
-			TaskId:      "test-task-update",
-			Description: "Test Update Todo",
-		}
-	*/
-
-	err = testClient.Subscribe(models.TodoCmdChannel)
+	testPubSub, err := testClient.Subscribe(context.Background(), models.TodoCmdChannel)
 	if err != nil {
 		t.Error("Invalid Pubsub Handler")
 	}
-	//defer testPubSub.Close()
 
 	err = testClient.db.Publish(models.TodoCmdChannel, "hello").Err()
 	if err != nil {
 		t.Errorf("Failed to publish message: %v\n", err.Error())
 	}
 
-	testMSG := testClient.Receive(context.Background())
+	testMSG := testPubSub.Receive(context.Background())
 
 	t.Logf("Received message is: %v\n", testMSG)
 

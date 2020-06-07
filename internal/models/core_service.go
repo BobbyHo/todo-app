@@ -10,5 +10,6 @@ type Store struct {
 
 type Service struct {
 	Database Database
+	MsgQ     TodoMsg
 	Store    *Store
 }
