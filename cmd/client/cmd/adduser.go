@@ -1,18 +1,3 @@
-/*
-Copyright © 2020 NAME HERE <EMAIL ADDRESS>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
@@ -27,16 +12,13 @@ var adduserCmd = &cobra.Command{
 	Short: "add a user to Todo App",
 	Long:  `Register a new user to a Todo App - This is required before calling other Todo operations`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			fmt.Println("user name can not be empty")
-		} else {
-			addUser(args)
-		}
+		addUser()
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(adduserCmd)
+	adduserCmd.MarkFlagRequired("username")
 
 	// Here you will define your flags and configuration settings.
 
@@ -49,15 +31,32 @@ func init() {
 	// adduserCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func addUser(args []string) {
-	userId := ""
+func addUser() {
+	//userId := ""
 
-	for i, n := range args {
-		if i == 0 {
-			userId = userId + n
-		} else {
-			userId = userId + " " + n
+	/*
+		for i, n := range args {
+			if i == 0 {
+				userId = userId + n
+			} else {
+				userId = userId + " " + n
+			}
 		}
+	*/
+	if userId == "" {
+		fmt.Println("Must provide user name in adduser command")
+		return
 	}
-	fmt.Printf("addUser: %v\n", userId)
+	todoConfig := TodoConfiguration{}
+	todoConfig.UserId = userId
+
+	err := todoConfig.AddUser()
+	if err != nil {
+		fmt.Printf("Failed to add user: error: %v\n", err.Error())
+	} else {
+		jsonStr := todoConfig.JsonPrettyString()
+		fmt.Printf("Added user successfully: \n %v\n", jsonStr)
+	}
+
+	//fmt.Printf("addUser: %v\n", userId)
 }

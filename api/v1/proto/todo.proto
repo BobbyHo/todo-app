@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
+//import "google/protobuf/timestamp.proto";
 
 option go_package = "todo-app/api/v1/proto/todo";
 
@@ -31,12 +31,13 @@ enum TodoState {
     TODO = 0;
     INPROGRESS = 1;
     DONE = 2;
+    UNDFINED = 4;
 }
 
 message TodoBody {
     string taskid = 1;
     string description = 2;
-    google.protobuf.Timestamp due_date = 3; 
+    string due_date = 3; 
     TodoState state = 4;
 }
 

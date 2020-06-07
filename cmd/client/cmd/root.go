@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -28,6 +27,12 @@ import (
 var cfgFile string
 var adduser string
 var deleteuser string
+
+var userId string
+var taskId string
+var description string
+var duedate string
+var progress int32
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -49,7 +54,6 @@ func Execute() {
 }
 
 func init() {
-	log.Println("inside init")
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -62,12 +66,17 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVarP(&userId, "username", "u", "", "User Name")
+	rootCmd.PersistentFlags().StringVarP(&taskId, "task", "t", "", "Task Title")
+
+	rootCmd.PersistentFlags().StringVarP(&description, "description", "d", "-1-1", "Task Description")
+	rootCmd.PersistentFlags().StringVarP(&duedate, "duedate", "e", "-1-1", "Task Due Date")
+	rootCmd.PersistentFlags().Int32VarP(&progress, "progress", "p", -1, "Task Progress 0: Todo; 1: In Progress; 2: Done")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	fmt.Println("inside initConfig")
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

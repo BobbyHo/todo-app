@@ -16,11 +16,9 @@ limitations under the License.
 package main
 
 import (
-	"log"
 	"todo-app/cmd/client/cmd"
 )
 
 func main() {
-	log.Println("Inside Main")
 	cmd.Execute()
 }

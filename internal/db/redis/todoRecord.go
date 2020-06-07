@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	pb "todo-app/api/v1/proto"
 	"todo-app/internal/models"
 
 	redis "github.com/go-redis/redis"
@@ -118,8 +119,27 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 			return err
 		}
 
-		// For now, assuming that user will fill in all the fields in the Data
-		temp.Record[t.TaskId] = *t
+		tt := models.TodoData{}
+
+		if t.Description == "" {
+			tt.Description = temp.Record[t.TaskId].Description
+		} else {
+			tt.Description = t.Description
+		}
+
+		if t.DueDate == "" {
+			tt.DueDate = temp.Record[t.TaskId].DueDate
+		} else {
+			tt.DueDate = t.DueDate
+		}
+
+		if t.State == pb.TodoState_UNDFINED {
+			tt.State = temp.Record[t.TaskId].State
+		} else {
+			tt.State = t.State
+		}
+
+		temp.Record[t.TaskId] = tt
 
 		data, err := json.Marshal(temp)
 		if err != nil {

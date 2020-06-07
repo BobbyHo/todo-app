@@ -4,17 +4,15 @@ import (
 	"context"
 
 	pb "todo-app/api/v1/proto"
-
-	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 // Todo Data record
 type TodoData struct {
-	UserId      string              `json:"userId"`
-	TaskId      string              `json:"taskId,omitempty"`
-	Description string              `json:"description,omitempty"`
-	State       pb.TodoState        `json:"state,omitempty"`
-	DueDate     timestamp.Timestamp `json:"userID,omitempty"`
+	UserId      string       `json:"userId"`
+	TaskId      string       `json:"taskId,omitempty"`
+	Description string       `json:"description,omitempty"`
+	State       pb.TodoState `json:"state,omitempty"`
+	DueDate     string       `json:"userID,omitempty"`
 }
 
 type TodoUser struct {

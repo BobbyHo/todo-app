@@ -45,6 +45,8 @@ func (s *server) AddTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply
 
 	// TODO: authenticate user
 
+	log.Println("Receive AddTodo Request")
+
 	replyMsg := "Add Todo Task Successful"
 
 	newTodo := &models.TodoData{
@@ -52,8 +54,10 @@ func (s *server) AddTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoReply
 		TaskId:      in.GetTodoBody().GetTaskid(),
 		Description: in.GetTodoBody().GetDescription(),
 		State:       in.GetTodoBody().GetState(),
-		DueDate:     *in.GetTodoBody().GetDueDate(),
+		DueDate:     in.GetTodoBody().GetDueDate(),
 	}
+
+	log.Println("Receive AddTodo Request 2")
 
 	pubMsg := newTodo.UserId + "add todo" + "task: " + newTodo.TaskId
 	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
@@ -85,7 +89,7 @@ func (s *server) UpdateTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoRe
 		TaskId:      in.GetTodoBody().GetTaskid(),
 		Description: in.GetTodoBody().GetDescription(),
 		State:       in.GetTodoBody().GetState(),
-		DueDate:     *in.GetTodoBody().GetDueDate(),
+		DueDate:     in.GetTodoBody().GetDueDate(),
 	}
 
 	pubMsg := newTodo.UserId + " update todo" + " task: " + newTodo.TaskId
@@ -117,7 +121,7 @@ func (s *server) DeleteTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoRe
 		TaskId:      in.GetTodoBody().GetTaskid(),
 		Description: in.GetTodoBody().GetDescription(),
 		State:       in.GetTodoBody().GetState(),
-		DueDate:     *in.GetTodoBody().GetDueDate(),
+		DueDate:     in.GetTodoBody().GetDueDate(),
 	}
 
 	err := Service.Store.TodoUserStore.DeleteTodo(ctx, newTodo)
@@ -151,7 +155,7 @@ func (s *server) ListTodo(ctx context.Context, in *pb.TodoListRequest) (*pb.Todo
 			Taskid:      res.TaskId,
 			Description: res.Description,
 			State:       res.State,
-			DueDate:     &res.DueDate,
+			DueDate:     res.DueDate,
 		}
 	}
 
@@ -179,7 +183,7 @@ func (s *server) ListAllTodos(ctx context.Context, in *pb.UserRequest) (*pb.Todo
 				Taskid:      r.TaskId,
 				Description: r.Description,
 				State:       r.State,
-				DueDate:     &r.DueDate,
+				DueDate:     r.DueDate,
 			}
 			listAllReply.Items = append(listAllReply.Items, p)
 		}
