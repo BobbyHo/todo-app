@@ -31,7 +31,7 @@ func NewClient() *Client {
 	return c
 }
 
-// Close the connection to the redis database
+// Open the connection to the redis database
 func (c *Client) Open(dbaddress, password string) error {
 	c.db = redis.NewClient(&redis.Options{
 		Addr:     dbaddress,
@@ -42,6 +42,8 @@ func (c *Client) Open(dbaddress, password string) error {
 	if c.db == nil {
 		return fmt.Errorf("Failed to open redis connection")
 	}
+
+	fmt.Printf("Opened Redis Connection: %v\n", dbaddress)
 
 	return nil
 }

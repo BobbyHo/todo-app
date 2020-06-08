@@ -9,28 +9,34 @@ import (
 // deleteuserCmd represents the deleteuser command
 var deleteuserCmd = &cobra.Command{
 	Use:   "deleteuser",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "delete a user",
+	Long:  `Delete an existing user`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("deleteuser called")
+		deleteUser()
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(deleteuserCmd)
+	adduserCmd.MarkFlagRequired("username")
+	adduserCmd.MarkFlagRequired("serverip")
 
-	// Here you will define your flags and configuration settings.
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deleteuserCmd.PersistentFlags().String("foo", "", "A help for foo")
+func deleteUser() {
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deleteuserCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	if userId == "" {
+		fmt.Println("Must provide user name in adduser command")
+		return
+	}
+	todoConfig := TodoConfiguration{}
+	todoConfig.UserId = userId
+
+	err := todoConfig.DeleteUser()
+	if err != nil {
+		fmt.Printf("Failed to delete user: error: %v\n", err.Error())
+	} else {
+		jsonStr := todoConfig.JsonPrettyString()
+		fmt.Printf("Deleted user successfully: \n %v\n", jsonStr)
+	}
 }

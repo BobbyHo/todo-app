@@ -35,10 +35,12 @@ func (s *TodoUserStore) AddUser(ctx context.Context, userId string) error {
 
 	var err error
 	//check if the user record already exists
-	_, err = s.client.db.Get(userId).Bytes()
+	err = s.client.db.Get(userId).Err()
 	if err == nil {
 		// user record already created
 		return nil
+	} else {
+		log.Printf("db Get return: %v\n", err.Error())
 	}
 
 	// create an empty user record
@@ -47,13 +49,13 @@ func (s *TodoUserStore) AddUser(ctx context.Context, userId string) error {
 
 	data, err := json.Marshal(nr)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Json Marhsal error: %v\n", err.Error())
 		return err
 	}
 
 	err = s.client.db.Set(userId, data, 0).Err()
 	if err != nil {
-		log.Println(err)
+		log.Printf("DB set Error: %v\n", err.Error())
 	}
 
 	return err
@@ -176,7 +178,7 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 	return &tt, err
 }
 
-// Delete a Todo List
+// Delete a Todo Task
 func (s *TodoUserStore) DeleteTodo(ctx context.Context, t *models.TodoData) error {
 	key := t.UserId
 	err := s.client.db.Watch(func(tx *redis.Tx) error {
@@ -224,7 +226,7 @@ func (s *TodoUserStore) DeleteTodo(ctx context.Context, t *models.TodoData) erro
 	return err
 }
 
-// List a specific TODO list
+// List a specific TODO task
 func (s *TodoUserStore) ListTodo(ctx context.Context, userId, taskId string) (*models.TodoData, error) {
 
 	//check if the user record already exists

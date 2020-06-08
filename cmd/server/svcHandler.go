@@ -15,7 +15,7 @@ func authenticateUser(userId string) bool {
 
 }
 
-// Add a new user
+// AddUser implements TodoServer.AddUser
 func (s *server) AddUser(ctx context.Context, in *pb.UserRequest) (*pb.UserReply, error) {
 	replyMsg := "Create User Successful"
 
@@ -31,7 +31,7 @@ func (s *server) AddUser(ctx context.Context, in *pb.UserRequest) (*pb.UserReply
 	return reply, err
 }
 
-// Add a new user
+// DeleteUser implements TodoServer.DeleteUser
 func (s *server) DeleteUser(ctx context.Context, in *pb.UserRequest) (*pb.UserReply, error) {
 	replyMsg := "Delete User Successful"
 
@@ -99,7 +99,7 @@ func (s *server) UpdateTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoRe
 		DueDate:     in.GetTodoBody().GetDueDate(),
 	}
 
-	log.Printf("UpdateTodo: UserId: %v\n", in.GetUserid())
+	//log.Printf("UpdateTodo: UserId: %v\n", in.GetUserid())
 
 	pubMsg := newTodo.UserId + " update todo" + " task: " + newTodo.TaskId
 	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
@@ -141,13 +141,19 @@ func (s *server) DeleteTodo(ctx context.Context, in *pb.TodoRequest) (*pb.TodoRe
 		DueDate:     in.GetTodoBody().GetDueDate(),
 	}
 
-	err := Service.Store.TodoUserStore.DeleteTodo(ctx, newTodo)
+	pubMsg := newTodo.UserId + "delete todo" + " task: " + newTodo.TaskId
+	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
+	if err != nil {
+		log.Printf("Failed to publish msg: %v error: %v\n", pubMsg, err.Error())
+	}
+
+	err = Service.Store.TodoUserStore.DeleteTodo(ctx, newTodo)
 	if err != nil {
 		replyMsg = "Delete Todo Task Fail"
 		log.Printf("Failed to update Todo: %v\n", err.Error())
 	}
 
-	log.Printf("UpdateTodo:\n %v\n", newTodo)
+	log.Printf("DeleteTodo:\n %v\n", newTodo)
 	reply := &pb.TodoReply{}
 	reply.Message = replyMsg
 	reply.TodoBody = in.GetTodoBody()
@@ -161,6 +167,12 @@ func (s *server) ListTodo(ctx context.Context, in *pb.TodoListRequest) (*pb.Todo
 	}
 
 	replyMsg := "List Todo Task Successful"
+
+	pubMsg := in.GetUserid() + " list todo" + " task: " + in.GetTaskid()
+	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
+	if err != nil {
+		log.Printf("Failed to publish msg: %v error: %v\n", pubMsg, err.Error())
+	}
 
 	res, err := Service.Store.TodoUserStore.ListTodo(ctx, in.GetUserid(), in.GetTaskid())
 	if err != nil {
@@ -182,13 +194,19 @@ func (s *server) ListTodo(ctx context.Context, in *pb.TodoListRequest) (*pb.Todo
 	return reply, nil
 }
 
-// List all Todos
+// ListAllTodos implements TodoServer.ListAllTodos
 func (s *server) ListAllTodos(ctx context.Context, in *pb.UserRequest) (*pb.TodoListAllReply, error) {
 	if !authenticateUser(in.GetUserid()) {
 		return &pb.TodoListAllReply{}, fmt.Errorf("User %v does not exist\n", in.GetUserid())
 	}
 
 	replyMsg := "List Todo Task Successful"
+
+	pubMsg := in.GetUserid() + " list all todos"
+	err := Service.MsgQ.Publish(ctx, models.TodoCmdChannel, pubMsg)
+	if err != nil {
+		log.Printf("Failed to publish msg: %v error: %v\n", pubMsg, err.Error())
+	}
 
 	res, err := Service.Store.TodoUserStore.ListAllTodos(ctx, in.GetUserid())
 	if err != nil {
@@ -214,15 +232,12 @@ func (s *server) ListAllTodos(ctx context.Context, in *pb.UserRequest) (*pb.Todo
 	return listAllReply, nil
 }
 
-// Listen to other TODO actions
+// ListenTodos implements TodoServer.ListenTodos
 func (s *server) ListenTodos(in *pb.ListenRequest, stream pb.Todo_ListenTodosServer) error {
 	if !authenticateUser(in.GetUserid()) {
 		return fmt.Errorf("User %v does not exist\n", in.GetUserid())
 	}
 
-	//log.Println("ListenTodos")
-	// create a new msq client and connect to pubsub
-	//msgQ := msgredis.NewMsgHandler()
 	msgQ := Service.MsgQ
 
 	log.Printf("ListenTodos: Subscribe to message : %v\n", models.TodoCmdChannel)

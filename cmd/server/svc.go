@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -130,6 +131,8 @@ func SvcInit(ctx context.Context, configPath string) *models.Service {
 			globalConfig = *tempConfig
 		}
 	}
+
+	fmt.Printf("GlobalConfig:\n %v\n", globalConfig)
 
 	dbaddress := globalConfig.DBAddress + ":" + strconv.Itoa(globalConfig.DBPort)
 	// for now we assume that there is no password required

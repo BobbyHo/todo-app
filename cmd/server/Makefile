@@ -9,7 +9,7 @@ init-dist-dir:
 	mkdir -p $(BIN_DIR)
 
 build: init-dist-dir
-	go clean; go build -o todoserver 
+	go clean --modcache; go build -o todoserver 
 	mv -f todoserver $(BIN_DIR)
 	cp ../../config/todoserverconf.json $(BIN_DIR)
 
@@ -17,8 +17,8 @@ rebuild: clean-artifact build
 
 clean-artifact:
 	go clean --modcache
-	rm -rf $(BIN_DIR)/abr-receiver
-	rm -rf $(BIN_DIR)/abrreceiverconf.json
+	rm -rf $(BIN_DIR)/todoserver
+	rm -rf $(BIN_DIR)/todoserverconf.json
 
 
 clean: clean-artifact

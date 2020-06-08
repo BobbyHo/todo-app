@@ -1,6 +1,6 @@
 {
-    "host": "10.0.0.47",
+    "host": "",
     "port": 12345,
-    "dbaddress": "10.0.0.47",
+    "dbaddress": "redis",
     "dbport": 6379
 }

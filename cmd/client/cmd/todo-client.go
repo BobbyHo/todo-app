@@ -117,8 +117,6 @@ func createConnection() (pb.TodoClient, *grpc.ClientConn, error) {
 // AddUser ...
 func (t *TodoConfiguration) AddUser() error {
 	// Set up a connection to the server.
-	//conn, err := grpc.Dial(serverIp, grpc.WithInsecure(), grpc.WithBlock())
-	log.Printf("Connecting to server %v\n", serverIp)
 	conn, err := grpc.Dial(serverIp, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -135,6 +133,30 @@ func (t *TodoConfiguration) AddUser() error {
 	_, err = c.AddUser(ctx, &newUser)
 	if err != nil {
 		log.Fatalf("could not add a new user: %v", err)
+	}
+
+	return err
+}
+
+// DeleteUser ...
+func (t *TodoConfiguration) DeleteUser() error {
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(serverIp, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewTodoClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// delete a user
+	newUser := pb.UserRequest{}
+	newUser.Userid = t.UserId
+	_, err = c.DeleteUser(ctx, &newUser)
+	if err != nil {
+		log.Printf("could not delete user: %v", err)
 	}
 
 	return err

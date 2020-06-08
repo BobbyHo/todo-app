@@ -1,5 +1,19 @@
-version: "2"
+version: "3"
 
 services:
-  image: todoap:1.1
+  app:
+    image: todoapp:1.0
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./todoserverconf.json:/todoapp/todoserverconf.json
+    links:
+      - redis
+  
+  redis:
+    image: redis:5.0.9
+
+    volumes:
+      - ./redis-data:/var/lib/redis
+
   
