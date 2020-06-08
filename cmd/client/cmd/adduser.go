@@ -19,6 +19,7 @@ var adduserCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(adduserCmd)
 	adduserCmd.MarkFlagRequired("username")
+	adduserCmd.MarkFlagRequired("serverip")
 }
 
 func addUser() {

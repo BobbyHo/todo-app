@@ -1,0 +1,5 @@
+version: "2"
+
+services:
+  image: todoap:1.1
+  

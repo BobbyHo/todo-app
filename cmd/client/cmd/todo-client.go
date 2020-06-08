@@ -17,10 +17,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	address = "localhost:12345"
-)
-
 type TodoConfiguration struct {
 	UserId      string  `json:"userId"`
 	TaskId      *string `json:"taskId,omitempty"`
@@ -107,7 +103,7 @@ func (t *TodoConfiguration) createTodoRequest() (*pb.TodoRequest, error) {
 
 func createConnection() (pb.TodoClient, *grpc.ClientConn, error) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(serverIp, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -121,7 +117,9 @@ func createConnection() (pb.TodoClient, *grpc.ClientConn, error) {
 // AddUser ...
 func (t *TodoConfiguration) AddUser() error {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	//conn, err := grpc.Dial(serverIp, grpc.WithInsecure(), grpc.WithBlock())
+	log.Printf("Connecting to server %v\n", serverIp)
+	conn, err := grpc.Dial(serverIp, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -286,7 +284,7 @@ func (t *TodoConfiguration) ListenTodos() {
 	ctxListen, cancelListen := context.WithCancel(context.Background())
 	defer cancelListen()
 
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(serverIp, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

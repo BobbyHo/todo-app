@@ -22,6 +22,11 @@ build-client:
 
 build-all: build-server build-client
 
+docker:
+	@cp dist/usr/bin/todoserver deploy/todoserver
+	@cp dist/usr/bin/todoserverconf.json deploy/todoserverconf.json
+	@cd deploy; docker build -t todoapp:1.0 .
+
 clean:
 	make -C cmd/server clean
 	make -C cmd/client clean

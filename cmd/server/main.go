@@ -34,8 +34,7 @@ import (
 )
 
 const (
-	// TODO: make this configurable
-	defaultPort = ":38888"
+	defaultPort = ":12345"
 )
 
 // server is used to implement todo.TodoServer

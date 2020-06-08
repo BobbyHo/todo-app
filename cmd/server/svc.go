@@ -25,7 +25,7 @@ var (
 
 // GlobalConfig defines the configuration parameters for this web service
 type GlobalConfig struct {
-	Addr      string `json:"host,omitempty"`      //default value is 0.0.0.0
+	Addr      string `json:"host,omitempty"`      //default value is empty string
 	Port      int    `json:"port,omitempty"`      //default value is 12345
 	DBAddress string `json:"dbaddress,omitempty"` //default value is 127.0.0.1
 	DBPort    int    `json:"dbport,omitempty"`    //default value 6379 -- REDIS default port
@@ -119,7 +119,7 @@ func openService(ctx context.Context, dbaddress, password string) *models.Servic
 // SvcInit initializes the service configuration and DB connections
 func SvcInit(ctx context.Context, configPath string) *models.Service {
 	// set default values
-	globalConfig.Addr = "0.0.0.0"
+	globalConfig.Addr = ""
 	globalConfig.Port = 12345
 	globalConfig.DBAddress = "127.0.0.1"
 	globalConfig.DBPort = 6379

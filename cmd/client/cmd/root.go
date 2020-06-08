@@ -19,6 +19,8 @@ var description string
 var duedate string
 var progress int32
 
+var serverIp string
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "todoclient",
@@ -48,6 +50,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&description, "description", "d", "-1-1", "Task Description")
 	rootCmd.PersistentFlags().StringVarP(&duedate, "duedate", "e", "-1-1", "Task Due Date")
 	rootCmd.PersistentFlags().Int32VarP(&progress, "progress", "p", -1, "Task Progress 0: Todo; 1: In Progress; 2: Done")
+	rootCmd.PersistentFlags().StringVarP(&serverIp, "serverip", "s", "127.0.0.1:12345", "Server Address")
 }
 
 // initConfig reads in config file and ENV variables if set.

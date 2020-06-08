@@ -22,6 +22,7 @@ func init() {
 	rootCmd.AddCommand(addtodoCmd)
 	addtodoCmd.MarkFlagRequired("username")
 	addtodoCmd.MarkFlagRequired("task")
+	addtodoCmd.MarkFlagRequired("serverip")
 }
 
 func addTodo() {
