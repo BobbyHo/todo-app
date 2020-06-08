@@ -19,6 +19,17 @@ type TodoUserStore struct {
 	client *Client
 }
 
+// Check if an user exists in the DB
+func (s *TodoUserStore) FindUser(userId string) bool {
+	err := s.client.db.Get(userId).Err()
+	if err != nil {
+		// user record already created
+		return false
+	}
+
+	return true
+}
+
 // AddUser creates a new User Todo Record in the database.
 func (s *TodoUserStore) AddUser(ctx context.Context, userId string) error {
 
@@ -106,6 +117,7 @@ func (s *TodoUserStore) AddTodo(ctx context.Context, t *models.TodoData) (*model
 // Update a Todo Task
 func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*models.TodoData, error) {
 	key := t.UserId
+	var tt models.TodoData
 	err := s.client.db.Watch(func(tx *redis.Tx) error {
 		val, err := tx.Get(key).Bytes()
 		if err != nil && err != redis.Nil {
@@ -119,7 +131,9 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 			return err
 		}
 
-		tt := models.TodoData{}
+		log.Printf("todoRecord UPdateTodo UserId: %v\n", t.UserId)
+		tt.UserId = t.UserId
+		tt.TaskId = t.TaskId
 
 		if t.Description == "" {
 			tt.Description = temp.Record[t.TaskId].Description
@@ -134,6 +148,7 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 		}
 
 		if t.State == pb.TodoState_UNDFINED {
+			log.Printf("using original state: %v\n", temp.Record[t.TaskId].State)
 			tt.State = temp.Record[t.TaskId].State
 		} else {
 			tt.State = t.State
@@ -158,7 +173,7 @@ func (s *TodoUserStore) UpdateTodo(ctx context.Context, t *models.TodoData) (*mo
 		fmt.Printf("Failed to update record %v\n", err.Error())
 	}
 
-	return t, err
+	return &tt, err
 }
 
 // Delete a Todo List

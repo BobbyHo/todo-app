@@ -6,25 +6,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var configMap map[string]string = make(map[string]string)
-
-// addtodoCmd represents the addtodo command
-var addtodoCmd = &cobra.Command{
-	Use:   "addtodo",
-	Short: "add a todo task",
-	Long:  `Add a new todo task`,
+// updatetodoCmd represents the updatetodo command
+var updatetodoCmd = &cobra.Command{
+	Use:   "updatetodo",
+	Short: "update an existing todo task",
+	Long:  `Update an existing Todo task`,
 	Run: func(cmd *cobra.Command, args []string) {
-		addTodo()
+		updateTodo()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(addtodoCmd)
-	addtodoCmd.MarkFlagRequired("username")
-	addtodoCmd.MarkFlagRequired("task")
+	rootCmd.AddCommand(updatetodoCmd)
+	updatetodoCmd.MarkFlagRequired("username")
+	updatetodoCmd.MarkFlagRequired("task")
 }
 
-func addTodo() {
+func updateTodo() {
 	if userId == "" {
 		fmt.Println("Must provide user name in addtodo command")
 		return
@@ -49,16 +47,14 @@ func addTodo() {
 
 	if progress != -1 {
 		todoConfig.Progress = &progress
-	} else {
-		var p int32 = 0
-		todoConfig.Progress = &p
 	}
 
-	err := todoConfig.AddTodo()
+	tc, err := todoConfig.UpdateTodo()
 	if err != nil {
-		fmt.Printf("Failed to add todo: error: %v\n", err.Error())
+		fmt.Printf("Failed to update todo: error: %v\n", err.Error())
 	} else {
-		jsonStr := todoConfig.JsonPrettyString()
-		fmt.Printf("Added todo successfully: \n %v\n", jsonStr)
+		tc.UserId = todoConfig.UserId
+		jsonStr := tc.JsonPrettyString()
+		fmt.Printf("Updated todo successfully: \n %v\n", jsonStr)
 	}
 }

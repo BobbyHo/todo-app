@@ -19,30 +19,10 @@ var adduserCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(adduserCmd)
 	adduserCmd.MarkFlagRequired("username")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// adduserCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// adduserCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func addUser() {
-	//userId := ""
 
-	/*
-		for i, n := range args {
-			if i == 0 {
-				userId = userId + n
-			} else {
-				userId = userId + " " + n
-			}
-		}
-	*/
 	if userId == "" {
 		fmt.Println("Must provide user name in adduser command")
 		return
@@ -58,5 +38,4 @@ func addUser() {
 		fmt.Printf("Added user successfully: \n %v\n", jsonStr)
 	}
 
-	//fmt.Printf("addUser: %v\n", userId)
 }

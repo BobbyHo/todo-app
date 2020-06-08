@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	pb "todo-app/api/v1/proto"
@@ -22,7 +26,7 @@ type TodoConfiguration struct {
 	TaskId      *string `json:"taskId,omitempty"`
 	Description *string `json:"description,omitempty"`
 	DueDate     *string `json:"duedate,omitempty"`
-	Progress    *int32  `json:"duedate,omitempty"`
+	Progress    *int32  `json:"progress,omitempty"`
 }
 
 func convertReplyToTodoConfiguration(res *pb.TodoReply) *TodoConfiguration {
@@ -30,6 +34,25 @@ func convertReplyToTodoConfiguration(res *pb.TodoReply) *TodoConfiguration {
 	tc.TaskId = &res.TodoBody.Taskid
 	tc.Description = &res.TodoBody.Description
 	tc.DueDate = &res.TodoBody.DueDate
+	progress := int32(res.TodoBody.State)
+	tc.Progress = &progress
+	return &tc
+}
+
+func convertReplyToAllTodoConfigurations(userId string, res *pb.TodoListAllReply) []*TodoConfiguration {
+	tc := []*TodoConfiguration{}
+
+	for _, r := range res.Items {
+		todoConfig := &TodoConfiguration{}
+		todoConfig.UserId = userId
+		todoConfig.TaskId = &r.Taskid
+		todoConfig.Description = &r.Description
+		todoConfig.DueDate = &r.DueDate
+		progress := int32(r.State)
+		todoConfig.Progress = &progress
+
+		tc = append(tc, todoConfig)
+	}
 	return tc
 }
 
@@ -42,6 +65,15 @@ func (t *TodoConfiguration) JsonPrettyString() string {
 	}
 	//fmt.Printf("%s\n", string(prettyJSON))
 	return string(prettyJSON)
+}
+
+func (t *TodoConfiguration) createTodoListRequest() *pb.TodoListRequest {
+	tLR := pb.TodoListRequest{}
+	tLR.Userid = t.UserId
+	tLR.Taskid = *t.TaskId
+
+	return &tLR
+
 }
 
 func (t *TodoConfiguration) createTodoRequest() (*pb.TodoRequest, error) {
@@ -64,6 +96,7 @@ func (t *TodoConfiguration) createTodoRequest() (*pb.TodoRequest, error) {
 	if t.Progress != nil {
 		todoBody.State = pb.TodoState(*t.Progress)
 	} else {
+		log.Println("Setting state to UNDEFIND")
 		todoBody.State = pb.TodoState_UNDFINED
 	}
 
@@ -136,28 +169,31 @@ func (t *TodoConfiguration) AddTodo() error {
 }
 
 // UpdateTodo ...
-func (t *TodoConfiguration) UpdateTodo() error {
+func (t *TodoConfiguration) UpdateTodo() (*TodoConfiguration, error) {
 
 	todoRequest, err := t.createTodoRequest()
 	if err != nil {
-		return err
+		return &TodoConfiguration{}, err
 	}
 
 	c, conn, err := createConnection()
 	if err != nil {
-		return err
+		return &TodoConfiguration{}, err
 	}
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	_, err = c.UpdateTodo(ctx, todoRequest)
+	res, err := c.UpdateTodo(ctx, todoRequest)
 	if err != nil {
-		log.Fatalf("could not add Todo: %v", err)
+		log.Printf("could not add Todo: %v", err.Error())
+		return &TodoConfiguration{}, err
 	}
 
-	return err
+	tc := convertReplyToTodoConfiguration(res)
+
+	return tc, err
 }
 
 // DeleteTodo ...
@@ -185,34 +221,71 @@ func (t *TodoConfiguration) DeleteTodo() error {
 	return err
 }
 
-// UpdateTodo ...
-func (t *TodoConfiguration) ListTodo() (*TodoConTodoConfiguration, error) {
+// ListAllTodos
+func (t *TodoConfiguration) ListAllTodos() ([]*TodoConfiguration, error) {
+	user := pb.UserRequest{}
+	user.Userid = t.UserId
 
-	todoRequest, err := t.createTodoRequest()
-	if err != nil {
-		return err
-	}
+	reply := []*TodoConfiguration{}
 
 	c, conn, err := createConnection()
 	if err != nil {
-		return err
+		return reply, err
 	}
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	res, err = c.ListTodo(ctx, todoRequest)
+	res, err := c.ListAllTodos(ctx, &user)
 	if err != nil {
-		log.Fatalf("could not list Todo: %v", err)
+		log.Printf("could not list Todo: %v", err)
+		return reply, err
 	}
 
-	tc := convertReplyToTodoConfiguration(res)
+	tc := convertReplyToAllTodoConfigurations(t.UserId, res)
 	return tc, err
 }
 
-func ListenTodos(ctx context.Context) {
+// ListTodo ...
+func (t *TodoConfiguration) ListTodo() (*TodoConfiguration, error) {
+
+	todoRequest := t.createTodoListRequest()
+
+	c, conn, err := createConnection()
+	if err != nil {
+		return &TodoConfiguration{}, err
+	}
+	defer conn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	res, err := c.ListTodo(ctx, todoRequest)
+	if err != nil {
+		log.Printf("could not list Todo: %v", err)
+		return &TodoConfiguration{}, err
+	}
+
+	tc := convertReplyToTodoConfiguration(res)
+	tc.UserId = t.UserId
+	return tc, err
+}
+
+func (t *TodoConfiguration) ListenTodos() {
+	// register for signals
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+	var wg sync.WaitGroup
+
 	// Set up a connection to the server.
+	ctxListen, cancelListen := context.WithCancel(context.Background())
+	defer cancelListen()
+
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -220,25 +293,49 @@ func ListenTodos(ctx context.Context) {
 	defer conn.Close()
 	c := pb.NewTodoClient(conn)
 
-	userId := "test-new-user"
-
 	newListen := pb.ListenRequest{}
-	newListen.Userid = userId
-	stream, err := c.ListenTodos(ctx, &newListen)
+	newListen.Userid = t.UserId
+	stream, err := c.ListenTodos(ctxListen, &newListen)
 	if err != nil {
 		log.Fatalf("%v.ListenTodos = _, %v", c, err)
 	}
 
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+	listenloop:
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Printf("Receive Done Signal in Listen")
+				break listenloop
+			default:
+				listenReply, err := stream.Recv()
+				if err == io.EOF {
+					break listenloop
+				}
+				if err != nil {
+					log.Fatalf("%v.ListenTodos(_) = _, %v", c, err)
+				}
+				fmt.Printf("Received Listen Reply: %v\n", listenReply)
+			}
+		}
+	}(ctxListen)
+
+waitloop:
+	// wait for the stop signal
 	for {
-		listenReply, err := stream.Recv()
-		if err == io.EOF {
-			break
+		select {
+		case sig := <-sigs:
+			log.Printf("\nReceived a signal: %v\n", sig)
+			cancelListen() // signal the gRPC server to shutdown
+			break waitloop
+		default:
+			time.Sleep(10 * time.Millisecond)
 		}
-		if err != nil {
-			log.Fatalf("%v.ListenTodos(_) = _, %v", c, err)
-		}
-		log.Printf("Received Listen Reply: %v\n", listenReply)
 	}
+
+	wg.Wait()
 
 }
 
