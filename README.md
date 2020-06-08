@@ -178,6 +178,9 @@ Deleted todo successfully:
 ```
 
 ## Project Structure
+### app/v1/proto
+gRPC interface defintions (todo.proto) and the auto-generated client and server stubs (todo.pb.go)
+
 ### cmd
 The cmd directory contains the server (cmd/server) and client (cmd/client) main execution codes.
 
