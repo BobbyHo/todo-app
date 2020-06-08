@@ -1,6 +1,0 @@
-{
-    "host": "",
-    "port": 12345,
-    "dbaddress": "redis",
-    "dbport": 6379
-}

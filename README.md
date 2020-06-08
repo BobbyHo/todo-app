@@ -194,7 +194,7 @@ The models package contains interface definitions for core_services (i.e. the To
 #### db
 At the moment, redis is the database for storing the TODO records. todoRecord.go implements the interface methods defined in the models package. 
 
-#### data model
+##### data model
 Each user (TodoUser)contains a collection of todo tasks (TodoData). The key to access the record is the userId and inside a user record, taskId is the key to retrieve individual todo task.
 
 #### msgqueue
