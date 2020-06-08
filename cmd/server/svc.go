@@ -25,10 +25,10 @@ var (
 
 // GlobalConfig defines the configuration parameters for this web service
 type GlobalConfig struct {
-	Addr      string `json:"host,omitempty"`       //default value is 0.0.0.0
-	Port      int    `json:"port,omitempty"`       //default value is 12345
-	DBAddress string `json:"db-address,omitempty"` //default value is 127.0.0.1
-	DBPort    int    `json:"db-address,omitempty"` //default value 6379 -- REDIS default port
+	Addr      string `json:"host,omitempty"`      //default value is 0.0.0.0
+	Port      int    `json:"port,omitempty"`      //default value is 12345
+	DBAddress string `json:"dbaddress,omitempty"` //default value is 127.0.0.1
+	DBPort    int    `json:"dbport,omitempty"`    //default value 6379 -- REDIS default port
 }
 
 var globalConfig GlobalConfig

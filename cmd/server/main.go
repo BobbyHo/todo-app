@@ -60,23 +60,13 @@ func (t *todo) String() string {
 	return s
 }
 
-/*
-func main() {
-	lis, err := net.Listen("tcp", defaultPort)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
-	pb.RegisterTodoServer(s, &server{})
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
-}
-*/
-
 func main() {
 
 	var configPath string
+
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	}
 
 	log.Printf("configuration Path: %v\n", configPath)
 
