@@ -60,6 +60,6 @@ func addTodo() {
 		fmt.Printf("Failed to add todo: error: %v\n", err.Error())
 	} else {
 		jsonStr := todoConfig.JsonPrettyString()
-		fmt.Printf("Added todo successfully: \n %v\n", jsonStr)
+		fmt.Printf("Added todo successfully:\n%v\n", jsonStr)
 	}
 }

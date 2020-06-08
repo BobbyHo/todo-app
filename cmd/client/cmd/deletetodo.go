@@ -44,6 +44,6 @@ func deleteTodo() {
 		fmt.Printf("Failed to delete todo: error: %v\n", err.Error())
 	} else {
 		jsonStr := todoConfig.JsonPrettyString()
-		fmt.Printf("Deleted todo successfully: \n %v\n", jsonStr)
+		fmt.Printf("Deleted todo successfully:\n%v\n", jsonStr)
 	}
 }

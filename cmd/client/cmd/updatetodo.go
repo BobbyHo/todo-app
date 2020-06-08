@@ -55,6 +55,6 @@ func updateTodo() {
 	} else {
 		tc.UserId = todoConfig.UserId
 		jsonStr := tc.JsonPrettyString()
-		fmt.Printf("Updated todo successfully: \n %v\n", jsonStr)
+		fmt.Printf("Updated todo successfully:\n%v\n", jsonStr)
 	}
 }

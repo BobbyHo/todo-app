@@ -36,7 +36,7 @@ func addUser() {
 		fmt.Printf("Failed to add user: error: %v\n", err.Error())
 	} else {
 		jsonStr := todoConfig.JsonPrettyString()
-		fmt.Printf("Added user successfully: \n %v\n", jsonStr)
+		fmt.Printf("Added user successfully:\n%v\n", jsonStr)
 	}
 
 }

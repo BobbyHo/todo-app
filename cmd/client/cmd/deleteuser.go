@@ -37,6 +37,6 @@ func deleteUser() {
 		fmt.Printf("Failed to delete user: error: %v\n", err.Error())
 	} else {
 		jsonStr := todoConfig.JsonPrettyString()
-		fmt.Printf("Deleted user successfully: \n %v\n", jsonStr)
+		fmt.Printf("Deleted user successfully:\n%v\n", jsonStr)
 	}
 }
