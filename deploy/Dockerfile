@@ -1,4 +1,4 @@
-FROM golang:1.14.3
+FROM golang:1.26.1
 RUN mkdir -p /todoapp
 WORKDIR /todoapp
 COPY todoserver .

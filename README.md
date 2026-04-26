@@ -2,13 +2,13 @@
 
 The project is tested based on the following:
 
-- Go version: 1.14.4
+- Go version: 1.26.1
 - Ubuntu: 18.04
 - Docker: 19.03.1
 
 ## How to build?
 
-The following steps assume that Go environment (golang 1.14.1+) has been setup in the system. 
+The following steps assume that Go environment (golang 1.26.1+) has been setup in the system. 
 
 a) check out the code into the GOPATH (i.e. /go/src)
 
@@ -209,5 +209,4 @@ sample configuration file for the todoserver
 
 ### deploy
 Dockerfile and Docker-Compose files
-
 

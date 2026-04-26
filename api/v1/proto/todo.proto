@@ -2,7 +2,7 @@ syntax = "proto3";
 
 //import "google/protobuf/timestamp.proto";
 
-option go_package = "todo-app/api/v1/proto/todo";
+option go_package = "todo-app/api/v1/proto;todo";
 
 package todo;
 

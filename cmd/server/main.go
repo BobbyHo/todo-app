@@ -11,7 +11,7 @@ import (
 
 	pb "todo-app/api/v1/proto"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -27,7 +27,7 @@ type todo struct {
 	userID      string              `json:"userId"`
 	taskID      string              `json:"taskId,omitempty"`
 	description string              `json:"description,omitempty"`
-	dueDate     timestamp.Timestamp `json:"userID,omitempty"`
+	dueDate     timestamppb.Timestamp `json:"userID,omitempty"`
 }
 
 func (t *todo) String() string {
