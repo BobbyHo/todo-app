@@ -6,55 +6,55 @@ The project is tested based on the following:
 - Ubuntu: 18.04
 - Docker: 19.03.1
 
-## How to build?
+## How to build
 
-The following steps assume that Go environment (golang 1.26.1+) has been setup in the system. 
+The following steps assume that a Go environment (Go 1.26.1+) has been set up on the system.
 
-a) check out the code into the GOPATH (i.e. /go/src)
+a) Check out the code into the GOPATH (i.e. /go/src).
 
-b) cd to the root directory of the project
+b) Change to the root directory of the project.
 
-c) run "make" 
-- this will compile both the server and client binaries
-- the target exec files are stored in dist/usr/bin
+c) Run `make`.
+- This compiles both the server and client binaries.
+- The binaries are stored in `dist/usr/bin`.
 ```bash
 make
 ```
 
 
-## how to run the todoserver?
-### Using Docker Container
+## How to run the todoserver
+### Using Docker
 
-The following steps assume that "make" has completed successfully. 
+The following steps assume that `make` has completed successfully.
 
-a) From the project's root diectory, run the following command:
+a) From the project's root directory, run the following command:
 
 ```bash
 make docker
 ```
 
-- you can replace "APP_VERSION" with a different verion 
+- You can replace `APP_VERSION` with a different version.
 
-b) Once step a) is done, a docker image is built. You could verify it by running the "docker images" command.
+b) Once step a) is done, a Docker image is built. You can verify it by running the `docker images` command.
 ```bash
 docker images -a | grep todo
 todoapp                                    1.0                             c566404ac937        26 minutes ago      825MB       21.5MB
 ```
 
-c) cd deploy and run docker-compose
+c) Change to the `deploy` directory and run Docker Compose.
 ```bash
 cd deploy
 docker-compose up
 ```
-Note: The default listening port for the todoserver is "12345" and it is defined in the todoserverconf.json file. The docker-compose command brings up a redis container and the todoserver container. If you changed the APP_VERSIon in the Makefile, please also update the app image version in docker-compose.yml.
+Note: The default listening port for the todoserver is `12345`, which is defined in `todoserverconf.json`. The Docker Compose command starts both the Redis container and the todoserver container. If you change `APP_VERSION` in the Makefile, also update the app image version in `docker-compose.yml`.
 
-## how to run todoclient?
-The todoclient binary is located in the dist/usr/bin directory. You could run the binary directly from there or copy it to another location. 
+## How to run todoclient
+The todoclient binary is located in the `dist/usr/bin` directory. You can run the binary directly from there or copy it to another location.
 
 The todoclient CLI options are:
 ```bash
 ./todoclient --help
-This Todo application allows a user to register or delete a user, add/update/delete/list Todo tasks
+This Todo application allows a user to register or delete a user and add, update, delete, or list Todo tasks.
 
 Usage:
   todoclient [flags]
@@ -83,15 +83,15 @@ Flags:
 
 Use "todoclient [command] --help" for more information about a command.
 ```
-By default, the client tries to connect to "127.0.0.1:12345". If the server is running in another VM or machine, you could specify the server IP addres by using the -s flag. For example:
+By default, the client tries to connect to `127.0.0.1:12345`. If the server is running in another VM or on another machine, specify the server address by using the `-s` flag. For example:
 ```bash
 ./todoclient adduser -u "test-user-A" -s "10.0.0.47:12345"
 ```
 
-Also, -u (--username) is required for all the commands.
+The `-u` (`--username`) flag is required for all commands.
 
 ### adduser
-The adduser command must be called first before using other todo commands. An example of adduser command is the following:
+The `adduser` command must be called before using other todo commands. For example:
 ```bash
 ./todoclient adduser -u "test-user-A"
 Added user successfully: 
@@ -158,7 +158,7 @@ Updated todo successfully:
 ```
 
 ### listentodo
-The listentodo command will block and wait for the server to send todo commands (entered by another todoclient) to it. To exit, press Ctrl+C.
+The `listentodo` command blocks and waits for the server to send todo commands entered by another todoclient. To exit, press Ctrl+C.
 
 ```bash
 ./todoclient listentodo -u "test-user-1"
@@ -178,35 +178,34 @@ Deleted todo successfully:
 ```
 
 ## Project Structure
-### app/v1/proto
-gRPC interface defintions (todo.proto) and the auto-generated client and server stubs (todo.pb.go)
+### api/v1/proto
+gRPC interface definitions (`todo.proto`) and the generated protobuf and gRPC files (`todo.pb.go` and `todo_grpc.pb.go`).
 
 ### cmd
-The cmd directory contains the server (cmd/server) and client (cmd/client) main execution codes.
+The `cmd` directory contains the server (`cmd/server`) and client (`cmd/client`) entry points.
 
 #### client/cmd
-This directory contains CLI implementations for each commands supported by the the todoclient. The root.go file defines flags and variables that are required by each child commands (i.e. addtodo, updatetodo and etc). todo-client.go defines the gRPC client stub that interacts with the gRPC server.
+This directory contains CLI implementations for each command supported by todoclient. The `root.go` file defines flags and variables shared by child commands such as `addtodo` and `updatetodo`. The `todo-client.go` file defines the gRPC client code that interacts with the gRPC server.
 
 #### server
-The file svc.go defines functions that handles server start up and stop. svcHandler.go defines the gRPC server functions that receives commands from the todoclient. It also interacts with the database and message queues for storing todo tasks and publishing todo events.
+The `svc.go` file defines functions that handle server startup and shutdown. The `svcHandler.go` file defines the gRPC server functions that receive commands from todoclient. It also interacts with the database and message queue for storing todo tasks and publishing todo events.
 
 ### internal
 #### models
-The models package contains interface definitions for core_services (i.e. the Todo Service), database access methods (dbstore) and message publishing (msgpublish.go)
+The `models` package contains interface definitions for core services, database access (`dbstore`), and message publishing (`msgpublish.go`).
 
 #### db
-At the moment, redis is the database for storing the TODO records. todoRecord.go implements the interface methods defined in the models package. 
+Redis is the database for storing TODO records. The `todoRecord.go` file implements the interface methods defined in the `models` package.
 
 ##### data model
-Each user (TodoUser)contains a collection of todo tasks (TodoData). The key to access the record is the userId and inside a user record, taskId is the key to retrieve individual todo task.
+Each user (`TodoUser`) contains a collection of todo tasks (`TodoData`). The `userId` identifies the user record, and the `taskId` identifies an individual todo task inside that user record.
 
 #### msgqueue
 #### msgredis
-Redis is also used as a message broker for pubsub. The msgredis implements methods defined in the models package.
+Redis is also used as a message broker for pub/sub. The `msgredis` package implements methods defined in the `models` package.
 
 ### config
-sample configuration file for the todoserver
+Sample configuration file for the todoserver.
 
 ### deploy
-Dockerfile and Docker-Compose files
-
+Dockerfile and Docker Compose files.
